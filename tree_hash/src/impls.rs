@@ -1,5 +1,5 @@
 use super::*;
-use alloy_primitives::{Address, FixedBytes, U128, U256};
+use alloy_primitives::{Address, FixedBytes, U128, U256, U64};
 use ssz::{Bitfield, Fixed, Variable};
 use std::sync::Arc;
 use typenum::Unsigned;
@@ -76,6 +76,25 @@ impl<const N: usize> TreeHash for [u8; N] {
         merkle_root(self, minimum_chunk_count)
     }
 }
+
+impl TreeHash for U64 {
+    fn tree_hash_type() -> TreeHashType {
+        TreeHashType::Basic
+    }
+
+    fn tree_hash_packed_encoding(&self) -> PackedEncoding {
+        PackedEncoding::from_slice(&self.to_le_bytes::<{ Self::BYTES }>())
+    }
+
+    fn tree_hash_packing_factor() -> usize {
+        4
+    }
+
+    fn tree_hash_root(&self) -> Hash256 {
+        Hash256::right_padding_from(&self.to_le_bytes::<{ Self::BYTES }>())
+    }
+}
+
 
 impl TreeHash for U128 {
     fn tree_hash_type() -> TreeHashType {
