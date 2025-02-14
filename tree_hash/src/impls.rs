@@ -39,6 +39,34 @@ impl_for_bitsize!(u32, 32);
 impl_for_bitsize!(u64, 64);
 impl_for_bitsize!(usize, 64);
 
+impl<T: TreeHash> TreeHash for Vec<T> {
+    fn tree_hash_type() -> TreeHashType {
+        TreeHashType::List
+    }
+
+    fn tree_hash_packed_encoding(&self) -> PackedEncoding {
+        unreachable!("Lists should never be packed.")
+    }
+
+    fn tree_hash_packing_factor() -> usize {
+        unreachable!("Lists should never be packed.")
+    }
+
+    fn tree_hash_root(&self) -> Hash256 {
+        // Collect the tree hash roots of each item in the vector.
+        let leaves: Vec<Hash256> = self.iter().map(|item| item.tree_hash_root()).collect();
+
+        // Flatten the Vec<Hash256> into a single byte slice.
+        let mut bytes = Vec::new();
+        for leaf in &leaves {
+            bytes.extend_from_slice(leaf.as_slice());
+        }
+
+        // Calculate the Merkle root using the flattened byte slice.
+        merkle_root(&bytes, leaves.len())
+    }
+}
+
 impl TreeHash for bool {
     fn tree_hash_type() -> TreeHashType {
         TreeHashType::Basic
